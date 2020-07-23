@@ -37,13 +37,20 @@ app.get('/test', function (req, res) {
 })
 app.get('/music', async function (req, res) {
   console.log("获取传递参数", req.query);
+  let { pagesize, pagenum } = req.query;
+  // 将字符串参数转为数字
+  pagesize = parseInt(pagesize);
+  pagenum = parseInt(pagenum);
   if (req.query.id) {
     // 如果存在id 则返回对应数据
+    console.log("当前是查询模式");
     res.send(await musiclist.find().where({ id: req.query.id }));
   }
   if (req.query.all) {
     // 不存在返回所有数据
-    res.send(await musiclist.find());
+    console.log("当前是分页模式");
+    console.log("返回当前数据为=》", await musiclist.find().limit(pagesize).skip(pagenum * pagesize));
+    res.send(await musiclist.find().limit(pagesize).skip(pagenum * pagesize));
   }
 
 })

@@ -12,7 +12,7 @@
     </div>
     <!-- 切换按钮 -->
     <btnBox :isStop="isStop" @stop="stop" :actId="id" @tonext="tonext" @toprev="toprev" @showmusic="showmusic"></btnBox>
-    <list :musicList="musicList" v-if="isload" @close="close" @handchange="chgMusic($event)"></list>
+    <list :musicList="musicList" v-if="isload" @close="close" @handchange="chgMusic($event)" @addlist="addlist"></list>
     <audio :src="actmusic!=null?actmusic.music:''" @canplay="getDuration" ref="audio"></audio>
   </div>
 </template>
@@ -62,13 +62,16 @@
         isStop: true,
         id: 1,
         backUrl: "url()",
-        actmusic: null,
         isshow: false,
         currentTime: 0,
         timeall: 0,
         isbig: false,
         musicList: [],
-        isload: false
+        isload: false,
+        pagesize: 3,
+        pagenum: 0,
+        choseId: 0,
+        actmusic: null
       }
     },
     components: {
@@ -86,6 +89,22 @@
       }
     },
     methods: {
+      addlist() {
+        // 监听歌曲列表滚动到底
+
+        //console.log("test");
+        this.pagenum += 1;
+        let pagenum = this.pagenum;
+        let pagesize = this.pagesize;
+        let musicList = this.musicList;
+        // 请求歌曲列表 
+        this.get('/music', { pagenum, pagesize, all: 1 }).then((res) => {
+          console.log("获取当前歌曲列表==》", res);
+          musicList.push(...res.data);
+          this.musicList = musicList;
+        })
+        console.log("test", this.pagenum);
+      },
       initMusic(id) {
         // 封装切换音乐代码
         this.id = id;
@@ -111,6 +130,8 @@
         // 手动选择歌曲
         //console.log("获取事件参数==>", msg);
         let id = msg;
+        console.log("获取选中下标==》", id);
+        this.isload = false;
         this.initMusic(id);
       },
       close() {
@@ -204,6 +225,8 @@
         return new Promise((resolve, reject) => {
 
           console.log("切换歌曲啦 ==>当前播放状态", this.isStop);
+          //每次切换会请求
+
           this.get('/music', { id }).then((res) => {
             console.log("获取当前对应数据==>", res);
             let data = res.data[0];
@@ -225,6 +248,7 @@
 
     created() {
       console.log("组件实例创建");
+      console.log("获取audio==>", this.actmusic);
       this.get('/test').then((res) => {
         console.log("获取数据", res);
         alert("获取数据" + res);
@@ -234,8 +258,11 @@
       })
       let id = this.id;
       this.changeMusic(id)
-      this.get('/music', { all: 1 }).then((res) => {
-        console.log("获取所有数据===>>>>>", res)
+      let { pagesize, pagenum } = this;
+      console.log("获取当前页码", pagenum, pagesize);
+
+      this.get('/music', { pagesize, pagenum, all: 1 }).then((res) => {
+        console.log("获取当前页数据===>>>>>", res.data)
         this.musicList = res.data;
 
       })
